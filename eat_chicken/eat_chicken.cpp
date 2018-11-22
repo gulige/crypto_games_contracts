@@ -402,7 +402,7 @@ void eat_chicken::trigger_tick_effects(game& g) {
         is_safe = ((row >= board_center_row - g.safe_area_radius) &&
                    (row <= board_center_row + g.safe_area_radius) &&
                    (col >= board_center_col - g.safe_area_radius) &&
-                   (col >= board_center_col + g.safe_area_radius));
+                   (col <= board_center_col + g.safe_area_radius));
         if (is_safe) {
             for (itr = cell.players.begin(); itr != cell.players.end(); itr++) {
                 player& plyr = get_player(g, *itr);
