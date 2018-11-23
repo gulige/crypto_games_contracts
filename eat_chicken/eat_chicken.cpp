@@ -345,9 +345,7 @@ void eat_chicken::tick(const account_name& who, const uint64_t& game_id) {
     eosio_assert(itr != existing_games.end(), "game doesn't exists");
 
     // game_progress: 0-初始（地图未设置），1-就绪（地图已设置），2-开启，3-关闭
-    if (itr->game_progress == 3) {
-        return;
-    }
+    eosio_assert(itr->game_progress < 3, "game has been already closed");
 
     existing_games.modify(itr, who, [&](auto& g) {
         g.step++;
