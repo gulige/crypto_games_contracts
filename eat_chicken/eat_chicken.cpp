@@ -510,7 +510,8 @@ bool eat_chicken::damage_player(game& g, player& plyr, int8_t damage) {
                     unlucky_plyr.hp = 0;
                 }
                 airdrop_eos_cell.players.clear();
-            } else if (g.dead_players == g.total_join_players - 1) {
+            }
+            if (g.dead_players == g.total_join_players - 1) {
                 std::vector<account_name> killers;
                 uint8_t kill_count = 0;
                 std::vector<player>::iterator it = g.players.begin();
