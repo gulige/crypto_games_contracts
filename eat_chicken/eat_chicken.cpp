@@ -149,7 +149,7 @@ void eat_chicken::move(const account_name& who, const uint64_t& game_id, const u
 
     // Check if it is a valid movement
     int8_t move_check_code = check_valid_movement(*itr, who, row, column);
-    print("move_check_code =", abs(move_check_code)+48);
+    print("move_check_code =", abs(move_check_code));
     eosio_assert(move_check_code == 0, "not a valid movement!");
 
     existing_games.modify(itr, who, [&](auto& g) {
