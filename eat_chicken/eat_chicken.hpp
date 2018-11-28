@@ -161,13 +161,14 @@ class eat_chicken : public eosio::contract {
             }
 
             uint64_t primary_key() const { return game_id; }
+            account_name get_creator() const { return creator; }
             EOSLIB_SERIALIZE( game, (game_id)(creator)(game_progress)(join_eos)(step)(total_join_players)(total_eos)(dead_players)(safe_area_radius)(airdrop_eos_pos)(winner)(board)(players))
         };
 
         /**
          * @brief The table definition, used to store existing games and their current state
          */
-        typedef eosio::multi_index< N(games), game> games;
+        typedef eosio::multi_index< N(games), game, eosio::indexed_by< N(bycreator), eosio::const_mem_fun<game, account_name, &game::get_creator> > > games;
 
     private:
         /// Create a game
