@@ -153,7 +153,7 @@ void eat_chicken::move(const account_name& who, const uint64_t& game_id, const u
     eosio_assert(move_check_code == 0, "not a valid movement!");
 
     existing_games.modify(itr, who, [&](auto& g) {
-        uint8_t cell_id = row * eat_chicken::game::board_width + column;
+        uint8_t cell_id = row * game::board_width + column;
         board_cell& cell = g.board[cell_id];
         cell.players.push_back(who);
         player& plyr = get_player(g, who);
@@ -171,7 +171,9 @@ void eat_chicken::move(const account_name& who, const uint64_t& game_id, const u
 
     if (itr->game_progress == 3) {
         // Remove game
-        existing_games.erase(itr);
+        if (itr->step >= game::remove_ticks_after_close) {
+            existing_games.erase(itr);
+        }
     }
 }
 
@@ -206,8 +208,8 @@ int8_t eat_chicken::check_valid_movement(const game& g, const account_name& who,
     if (g.game_progress != 2) {
         return -1; // game not started
     }
-    uint8_t board_width = eat_chicken::game::board_width;
-    uint8_t board_height = eat_chicken::game::board_height;
+    uint8_t board_width = game::board_width;
+    uint8_t board_height = game::board_height;
     if (column >= board_width || row >= board_height) {
         return -2; // out of boundary
     }
@@ -345,11 +347,11 @@ void eat_chicken::tick(const account_name& who, const uint64_t& game_id) {
     eosio_assert(itr != existing_games.end(), "game doesn't exists");
 
     // game_progress: 0-初始（地图未设置），1-就绪（地图已设置），2-开启，3-关闭
-    eosio_assert(itr->game_progress < 3, "game has been already closed");
-
     existing_games.modify(itr, who, [&](auto& g) {
         g.step++;
-        if (g.game_progress == 2) {
+        if (g.game_progress >= 3) {
+            // game has already been closed
+        } else if (g.game_progress == 2) {
             if (g.step % game::ticks_for_safe_area == 0) {
                 // Reduce the safe range
                 if (g.safe_area_radius >= 0) {
@@ -370,7 +372,9 @@ void eat_chicken::tick(const account_name& who, const uint64_t& game_id) {
 
     if (itr->game_progress == 3) {
         // Remove game
-        existing_games.erase(itr);
+        if (itr->step >= game::remove_ticks_after_close) {
+            existing_games.erase(itr);
+        }
     }
 }
 
@@ -382,10 +386,10 @@ void eat_chicken::tick(const account_name& who, const uint64_t& game_id) {
 void eat_chicken::trigger_tick_effects(game& g) {
     auto& board = g.board;
 
-    uint8_t board_width = eat_chicken::game::board_width;
-    uint8_t board_height = eat_chicken::game::board_height;
-    uint8_t board_center_row = eat_chicken::game::board_center_row;
-    uint8_t board_center_col = eat_chicken::game::board_center_column;
+    uint8_t board_width = game::board_width;
+    uint8_t board_height = game::board_height;
+    uint8_t board_center_row = game::board_center_row;
+    uint8_t board_center_col = game::board_center_column;
 
     uint8_t row, col;
     bool is_safe;
@@ -629,6 +633,7 @@ void eat_chicken::close(game& g, uint8_t reason) {
         }
     }
     g.game_progress = 3;
+    g.step = 0;
 }
 
 /**

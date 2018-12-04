@@ -124,6 +124,7 @@ class eat_chicken : public eosio::contract {
             static const uint8_t duel_card = 9;
             static const uint8_t relive_card = 10;
             static const uint8_t max_joiners = 100;
+            static const uint8_t remove_ticks_after_close = 2;
 
             game() {
                 reset();
