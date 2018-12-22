@@ -396,7 +396,7 @@ void eat_chicken::trigger_tick_effects(game& g) {
     std::vector<account_name>::iterator itr;
     std::map<account_name, player>::iterator it;
 
-    for (uint8_t i = 0; i < board.size(); i++) {
+    for (uint8_t i = 0; i < game::board_size; i++) {
         board_cell& cell = board[i];
         row = (uint8_t)(i / board_width);
         col = i % board_width;
@@ -418,6 +418,10 @@ void eat_chicken::trigger_tick_effects(game& g) {
             for (itr = cell.players.begin(); itr != cell.players.end();) {
                 player& plyr = get_player(g, *itr);
                 damage_player(g, plyr, 2);
+
+                if (cell.players.empty()) {
+                    break;
+                }
 
                 if (plyr.hp <= 0) {
                     itr = cell.players.erase(itr);
@@ -455,6 +459,10 @@ void eat_chicken::trigger_tick_effects(game& g) {
                 player& defender = get_player(g, *itr2);
 
                 player_pk(g, attacker, defender);
+
+                if (cell.players.empty()) {
+                    break;
+                }
 
                 if (attacker.hp <= 0) {
                     itr = cell.players.erase(itr);
