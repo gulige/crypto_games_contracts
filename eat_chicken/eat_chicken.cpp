@@ -442,6 +442,7 @@ void eat_chicken::trigger_tick_effects(game& g) {
             for (itr = cell.players.begin(); itr != cell.players.end();) {
                 player& attacker = get_player(g, *itr);
 
+                bool is_defender_looped = false;
                 std::vector<account_name>::iterator itr2 = itr;
                 itr2++;
                 if (itr2 == cell.players.end()) {
@@ -449,6 +450,7 @@ void eat_chicken::trigger_tick_effects(game& g) {
                     if (itr2 == itr) {
                         break;
                     }
+                    is_defender_looped = true;
                 }
                 player& defender = get_player(g, *itr2);
 
@@ -460,8 +462,9 @@ void eat_chicken::trigger_tick_effects(game& g) {
                     itr++;
                 }
                 if (defender.hp <= 0) {
-                    if (itr == cell.players.end()) {
+                    if (is_defender_looped) {
                         cell.players.erase(cell.players.begin());
+                        break;
                     } else {
                         itr = cell.players.erase(itr);
                     }
