@@ -686,6 +686,13 @@ void eat_chicken::delete_player_from_cell(board_cell& cell, const account_name& 
 
 void eat_chicken::close(game& g, uint8_t reason) {
     if (reason == 0) {
+        uint64_t total_win_eos = 0;
+        for (uint8_t j = 0; j < g.players.size(); j++) {
+            if (g.players[j].win_eos > 0) {
+                total_win_eos += g.players[j].win_eos;
+            }
+        }
+        eosio_assert(g.total_eos > total_win_eos, "total_eos must be > total_win_eos");
         // distribute eos according to game state
         for (uint8_t i = 0; i < g.players.size(); i++) {
             if (g.players[i].win_eos > 0) {
