@@ -76,6 +76,7 @@ void eat_chicken::join(const account_name& who, const eosio::asset& join_eos, co
         uint8_t cell_id = row * game::board_width + column;
         board_cell& cell = g.board[cell_id];
         cell.players.push_back(who);
+        log_event(cell, who, -1, 0, "join", 0);
         player plyr;
         plyr.cell_id = cell_id;
         plyr.acc_name = who;
@@ -83,6 +84,17 @@ void eat_chicken::join(const account_name& who, const eosio::asset& join_eos, co
         g.total_join_players++;
         g.total_eos += g.join_eos.amount;
     });
+}
+
+void eat_chicken::log_event(board_cell& cell, account_name who, int8_t target_type, uint64_t target_id, std::string evt, int32_t val) {
+    event e;
+    e.when = now();
+    e.who = who;
+    e.target_type = target_type;
+    e.target_id = target_id;
+    e.evt = evt;
+    e.val = val;
+    cell.event_list.push_back(e);
 }
 
 /**
@@ -156,6 +168,7 @@ void eat_chicken::move(const account_name& who, const uint64_t& game_id, const u
         uint8_t cell_id = row * game::board_width + column;
         board_cell& cell = g.board[cell_id];
         cell.players.push_back(who);
+        log_event(cell, who, -1, 0, "move", 0);
         player& plyr = get_player(g, who);
         uint8_t old_cell_id = plyr.cell_id;
         board_cell& old_cell = g.board[old_cell_id];
@@ -243,12 +256,18 @@ int8_t eat_chicken::check_valid_movement(const game& g, const account_name& who,
 void eat_chicken::trigger_move_effects(game& g, const account_name& who, player& plyr, board_cell& cell) {
     if (cell.item > 0) {
         if (cell.item_drop_ticks == 0) {
+            int8_t old_hp = plyr.hp;
+            int8_t old_attack = plyr.attack;
+            int8_t old_defense = plyr.defense;
+            uint64_t old_win_eos = plyr.win_eos;
             switch (cell.item) {
                 case 1: // 地雷
                     damage_player(g, plyr, 4);
                     if (plyr.hp <= 0) {
+                        log_event(cell, who, -1, 0, "die", 0);
                         delete_player_from_cell(cell, who);
                     }
+                    log_event(cell, who, 1, cell.item, "land_mine", plyr.hp - old_hp);
                     cell.item = 0;
                     break;
                 case 3:
@@ -257,6 +276,7 @@ void eat_chicken::trigger_move_effects(game& g, const account_name& who, player&
                     if (plyr.attack < get_weapon_attack(cell.item)) {
                         plyr.weapon = cell.item;
                         plyr.attack = get_weapon_attack(cell.item);
+                        log_event(cell, who, 1, cell.item, "weapon", plyr.attack - old_attack);
                         cell.item = 0;
                     }
                     break;
@@ -266,12 +286,14 @@ void eat_chicken::trigger_move_effects(game& g, const account_name& who, player&
                     if (plyr.defense < get_armor_defense(cell.item)) {
                         plyr.armor = cell.item;
                         plyr.defense = get_armor_defense(cell.item);
+                        log_event(cell, who, 1, cell.item, "armor", plyr.defense - old_defense);
                         cell.item = 0;
                     }
                     break;
                 case 9:
                 case 10: // 特殊道具
                     plyr.items.push_back(cell.item);
+                    log_event(cell, who, 1, cell.item, "special_item", 0);
                     cell.item = 0;
                     break;
                 case 11:
@@ -282,15 +304,18 @@ void eat_chicken::trigger_move_effects(game& g, const account_name& who, player&
                         } else {
                             plyr.hp += get_drug_hp(cell.item);
                         }
+                        log_event(cell, who, 1, cell.item, "drug", plyr.hp - old_hp);
                         cell.item = 0;
                     }
                     break;
                 case 13: // eos空投
                     plyr.win_eos += (uint64_t)(g.total_eos * 10 / 100);
+                    log_event(cell, who, 1, cell.item, "gold_airdrop", (int32_t)(plyr.win_eos - old_win_eos));
                     cell.item = 0;
                     break;
                 case 14: // 黄金矿点
                     plyr.win_eos += (uint64_t)(g.total_eos / 100);
+                    log_event(cell, who, 1, cell.item, "gold_mine", (int32_t)(plyr.win_eos - old_win_eos));
                     cell.item = 0;
                     break;
                 default:
@@ -300,6 +325,7 @@ void eat_chicken::trigger_move_effects(game& g, const account_name& who, player&
             switch (cell.item) {
                 case 2: // 武器空投
                     cell.item_drop_triggered = 1;
+                    log_event(cell, who, 1, cell.item, "item_airdrop_triggered", cell.item_drop_ticks);
                     break;
                 default:
                     break;
@@ -349,6 +375,8 @@ void eat_chicken::tick(const account_name& who, const uint64_t& game_id) {
     // game_progress: 0-初始（地图未设置），1-就绪（地图已设置），2-开启，3-关闭
     existing_games.modify(itr, who, [&](auto& g) {
         g.step++;
+        board_cell& center_cell = g.board[game::board_center_cell_id];
+        log_event(center_cell, N(none), -1, 0, "tick", g.step);
         if (g.game_progress >= 3) {
             // game has already been closed
         } else if (g.game_progress == 2) {
@@ -356,6 +384,7 @@ void eat_chicken::tick(const account_name& who, const uint64_t& game_id) {
                 // Reduce the safe range
                 if (g.safe_area_radius >= 0) {
                     g.safe_area_radius--;
+                    log_event(center_cell, N(none), -1, 0, "safe_area", -1);
                 }
             }
             trigger_tick_effects(g);
@@ -412,12 +441,18 @@ void eat_chicken::trigger_tick_effects(game& g) {
                     plyr.hp = player::max_hp;
                 } else {
                     plyr.hp += 1;
+                    log_event(cell, plyr.acc_name, -1, 0, "hp_recover_in_safe_area", 1);
                 }
             }
         } else {
             for (itr = cell.players.begin(); itr != cell.players.end();) {
                 player& plyr = get_player(g, *itr);
+                int8_t old_hp = plyr.hp;
                 damage_player(g, plyr, 2);
+                log_event(cell, plyr.acc_name, -1, 0, "hp_decrease_in_non_safe_area", plyr.hp - old_hp);
+                if (plyr.hp <= 0) {
+                    log_event(cell, plyr.acc_name, -1, 0, "die", 0);
+                }
 
                 if (cell.players.empty()) {
                     break;
@@ -439,6 +474,7 @@ void eat_chicken::trigger_tick_effects(game& g) {
                 }
             } else if (cell.item_drop_ticks > 0 && cell.item_drop_triggered > 0) {
                 cell.item_drop_ticks--;
+                log_event(cell, N(none), -1, 0, "item_airdrop_ticks", cell.item_drop_ticks);
             }
         }
 
@@ -458,7 +494,18 @@ void eat_chicken::trigger_tick_effects(game& g) {
                 }
                 player& defender = get_player(g, *itr2);
 
+                int8_t old_hp_attacker = attacker.hp;
+                int8_t old_hp_defender = defender.hp;
                 player_pk(g, attacker, defender);
+                log_event(cell, attacker.acc_name, 0, defender.acc_name, "attack", defender.hp - old_hp_defender);
+                if (defender.hp > 0) {
+                    log_event(cell, defender.acc_name, 0, attacker.acc_name, "attack", attacker.hp - old_hp_attacker);
+                    if (attacker.hp <= 0) {
+                        log_event(cell, attacker.acc_name, -1, 0, "die", 0);
+                    }
+                } else {
+                    log_event(cell, defender.acc_name, -1, 0, "die", 0);
+                }
 
                 if (cell.players.empty()) {
                     break;
@@ -511,24 +558,29 @@ bool eat_chicken::damage_player(game& g, player& plyr, int8_t damage) {
             plyr.weapon = 0;
             plyr.attack = 0;
             plyr.items.clear();
+            board_cell& cell = g.board[plyr.cell_id];
+            log_event(cell, plyr.acc_name, 1, game::relive_card, "item_used", 0);
             return true;
         } else {
             g.dead_players++;
             if (g.dead_players == (uint8_t)(g.total_join_players / 2)) {
                 board_cell& airdrop_eos_cell = g.board[g.airdrop_eos_pos];
                 airdrop_eos_cell.item_drop_ticks = 0;
+                log_event(airdrop_eos_cell, N(none), -1, 0, "gold_airdropped", 0);
                 for (uint8_t i = 0; i < airdrop_eos_cell.players.size(); i++) {
                     player& unlucky_plyr = get_player(g, airdrop_eos_cell.players[i]);
                     unlucky_plyr.items.clear();
                     unlucky_plyr.defense = 0;
                     unlucky_plyr.armor = 0;
                     unlucky_plyr.hp = 0;
+                    log_event(airdrop_eos_cell, unlucky_plyr.acc_name, -1, 0, "die", 0);
                 }
                 airdrop_eos_cell.players.clear();
             }
             if (g.dead_players == g.total_join_players - 1) {
                 std::vector<account_name> killers;
                 uint8_t kill_count = 0;
+                board_cell& center_cell = g.board[game::board_center_cell_id];
                 std::vector<player>::iterator it = g.players.begin();
                 for (; it != g.players.end(); it++) {
                     player& plyr = *it;
@@ -537,6 +589,7 @@ bool eat_chicken::damage_player(game& g, player& plyr, int8_t damage) {
                         g.winner = plyr.acc_name;
                         uint64_t winner_reward_eos = (uint64_t)(g.total_eos * 30 / 100);
                         plyr.win_eos += winner_reward_eos;
+                        log_event(center_cell, plyr.acc_name, -1, 0, "winner_reward", (int32_t)winner_reward_eos);
                     }
                     if (plyr.kill_count > kill_count) {
                         kill_count = plyr.kill_count;
@@ -550,6 +603,7 @@ bool eat_chicken::damage_player(game& g, player& plyr, int8_t damage) {
                 for (uint8_t i = 0; i < killers.size(); i++) {
                     player& plyr = get_player(g, killers[i]);
                     plyr.win_eos += killer_reward_eos;
+                    log_event(center_cell, plyr.acc_name, -1, 0, "killer_reward", (int32_t)killer_reward_eos);
                 }
             }
         }
@@ -582,6 +636,7 @@ void eat_chicken::do_player_pk(game& g, player& attacker, player& defender, bool
         damage = player::barehanded_attack;
     }
     is_defender_relive = damage_player(g, defender, damage);
+    board_cell& cell = g.board[attacker.cell_id];
     if (defender.hp > 0) {
         damage = defender.attack;
         if (damage <= 0) {
@@ -590,23 +645,30 @@ void eat_chicken::do_player_pk(game& g, player& attacker, player& defender, bool
         is_attacker_relive = damage_player(g, attacker, damage);
         if (attacker.hp <= 0) {
             defender.kill_count++;
+            uint64_t old_win_eos = defender.win_eos;
             defender.win_eos += (uint64_t)(g.total_eos * 20 / (100 * g.total_join_players));
+            log_event(cell, defender.acc_name, 0, attacker.acc_name, "kill_reward", (int32_t)(defender.win_eos - old_win_eos));
             uint64_t looted_eos = (uint64_t)(attacker.win_eos * 30 / 100);
             if (looted_eos > 0) {
                 defender.win_eos += looted_eos;
                 attacker.win_eos -= looted_eos;
+                log_event(cell, defender.acc_name, 0, attacker.acc_name, "gold_looted", (int32_t)looted_eos);
             }
         }
     } else {
         attacker.kill_count++;
+        uint64_t old_win_eos = attacker.win_eos;
         attacker.win_eos += (uint64_t)(g.total_eos * 20 / (100 * g.total_join_players));
+        log_event(cell, attacker.acc_name, 0, defender.acc_name, "kill_reward", (int32_t)(attacker.win_eos - old_win_eos));
         uint64_t looted_eos = (uint64_t)(defender.win_eos * 30 / 100);
         if (looted_eos > 0) {
             attacker.win_eos += looted_eos;
             defender.win_eos -= looted_eos;
+            log_event(cell, attacker.acc_name, 0, defender.acc_name, "gold_looted", (int32_t)looted_eos);
         }
     }
     if (is_duel) {
+        log_event(cell, attacker.acc_name, 1, game::duel_card, "item_used", 0);
         if (!(attacker.hp <= 0 || defender.hp <= 0 || is_attacker_relive || is_defender_relive)) {
             do_player_pk(g, attacker, defender, is_duel);
         }
@@ -630,6 +692,8 @@ void eat_chicken::close(game& g, uint8_t reason) {
                 withdraw(g.players[i].acc_name, eosio::asset(g.players[i].win_eos, EOS_SYMBOL));
             }
         }
+        board_cell& center_cell = g.board[game::board_center_cell_id];
+        log_event(center_cell, N(none), -1, 0, "game_over", 0);
     } else if (reason == 1) {
         for (uint8_t i = 0; i < g.players.size(); i++) {
             if (g.players[i].acc_name == g.creator) {

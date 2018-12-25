@@ -98,14 +98,26 @@ class eat_chicken : public eosio::contract {
             EOSLIB_SERIALIZE( player, (acc_name)(cell_id)(hp)(armor)(defense)(weapon)(attack)(items)(win_eos)(kill_count)(step) )
         };
 
+        struct event {
+            uint32_t             when = 0;
+            account_name         who = N(none);
+            int8_t               target_type = 0;
+            uint64_t             target_id = 0;
+            std::string          evt = "";
+            int32_t              val = 0;
+
+            EOSLIB_SERIALIZE( event, (when)(who)(target_type)(target_id)(evt)(val) )
+        };
+
         struct board_cell {
             int8_t                    cell_id = -1;
             std::vector<account_name> players;
             uint8_t                   item = 0; // item_drop_ticks = 0时，才有效
             uint8_t                   item_drop_triggered = 0;
             int8_t                    item_drop_ticks = 0; // item_drop_triggered = 1时，减少该ticks计数直到0
+            std::vector<event>        event_list;
 
-            EOSLIB_SERIALIZE( board_cell, (cell_id)(players)(item)(item_drop_triggered)(item_drop_ticks) )
+            EOSLIB_SERIALIZE( board_cell, (cell_id)(players)(item)(item_drop_triggered)(item_drop_ticks)(event_list) )
         };
 
         /**
@@ -118,6 +130,7 @@ class eat_chicken : public eosio::contract {
             static const uint16_t board_size = board_width * board_height;
             static const uint8_t board_center_row = 5;
             static const uint8_t board_center_column = 5;
+            static const uint8_t board_center_cell_id = 60;
             static const uint8_t max_safe_area_radius = 5;
             static const uint8_t ticks_for_safe_area = 6;
             static const uint8_t max_steps_before_kick_off = 60;
@@ -195,5 +208,6 @@ class eat_chicken : public eosio::contract {
         int8_t get_drug_hp(uint8_t item);
         bool consume_item(player& plyr, uint8_t item);
         size_t sub2sep(const std::string& input, std::string* output, const char& separator, const size_t& first_pos = 0, const bool& required = false);
+        void log_event(board_cell& cell, account_name who, int8_t target_type, uint64_t target_id, std::string evt, int32_t val);
 };
 /// @}
