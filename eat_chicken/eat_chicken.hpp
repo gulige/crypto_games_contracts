@@ -99,14 +99,17 @@ class eat_chicken : public eosio::contract {
         };
 
         struct event {
+            uint8_t              progress = 0;
+            int32_t              step = 0;
             uint32_t             when = 0;
             account_name         who = N(none);
             int8_t               target_type = 0;
-            uint64_t             target_id = 0;
+            account_name         target_name = N(none);
+            uint8_t              target_id = 0;
             std::string          evt = "";
             int32_t              val = 0;
 
-            EOSLIB_SERIALIZE( event, (when)(who)(target_type)(target_id)(evt)(val) )
+            EOSLIB_SERIALIZE( event, (progress)(step)(when)(who)(target_type)(target_name)(target_id)(evt)(val) )
         };
 
         struct board_cell {
@@ -208,6 +211,6 @@ class eat_chicken : public eosio::contract {
         int8_t get_drug_hp(uint8_t item);
         bool consume_item(player& plyr, uint8_t item);
         size_t sub2sep(const std::string& input, std::string* output, const char& separator, const size_t& first_pos = 0, const bool& required = false);
-        void log_event(board_cell& cell, account_name who, int8_t target_type, uint64_t target_id, std::string evt, int32_t val);
+        void log_event(game& g, board_cell& cell, account_name who, int8_t target_type, uint64_t target_id, std::string evt, int32_t val);
 };
 /// @}
