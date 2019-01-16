@@ -613,6 +613,7 @@ bool eat_chicken::damage_player(game& g, player& plyr, int8_t damage, player* at
             }
             if (g.dead_players == (uint8_t)(g.total_join_players / 2)) {
                 board_cell& airdrop_eos_cell = g.board[g.airdrop_eos_pos];
+                airdrop_eos_cell.item_drop_triggered = 1;
                 airdrop_eos_cell.item_drop_ticks = 0;
                 log_event(g, airdrop_eos_cell, N(none), -1, 0, "gold_airdropped", 0);
                 for (uint8_t i = 0; i < airdrop_eos_cell.players.size(); i++) {
