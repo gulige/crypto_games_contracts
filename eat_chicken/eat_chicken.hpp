@@ -203,7 +203,7 @@ class eat_chicken : public eosio::contract {
         void deposit(const account_name& from, const eosio::asset& quantity);
         void withdraw(const account_name& to, const eosio::asset& quantity);
         void delete_player_from_cell(board_cell& cell, const account_name& who);
-        bool damage_player(game& g, player& plyr, int8_t damage);
+        bool damage_player(game& g, player& plyr, int8_t damage, player* attacker);
         void player_pk(game& g, player& attacker, player& defender);
         void do_player_pk(game& g, player& attacker, player& defender, bool is_duel);
         int8_t get_weapon_attack(uint8_t item);
