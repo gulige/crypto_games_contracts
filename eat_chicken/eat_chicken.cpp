@@ -338,7 +338,8 @@ void eat_chicken::trigger_move_effects(game& g, const account_name& who, player&
             }
         } else if (cell.item_drop_ticks > 0) {
             switch (cell.item) {
-                case 2: // 武器空投
+                case 5: // 空投的高级武器
+                case 8: // 空投的高级防具
                     cell.item_drop_triggered = 1;
                     log_event(g, cell, who, 1, cell.item, "item_airdrop_triggered", cell.item_drop_ticks);
                     break;
