@@ -159,7 +159,6 @@ class eat_chicken : public eosio::contract {
             account_name          winner = N(none);
             std::vector<board_cell> board;
             std::vector<player> players;
-            uint32_t              kickoff_time = 0;
 
             // Reset game
             void reset() {
