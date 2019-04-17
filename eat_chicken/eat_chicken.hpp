@@ -151,7 +151,6 @@ class eat_chicken : public eosio::contract {
             uint8_t               game_progress = 0; // 0-初始（地图未设置），1-就绪（地图已设置），2-开启，3-关闭
             eosio::asset          join_eos = eosio::asset();
             int32_t               step = 0;
-            uint32_t              kickoff_time = 0;
             uint8_t               total_join_players = 0;
             uint64_t              total_eos = 0;
             uint8_t               dead_players = 0;
@@ -160,6 +159,7 @@ class eat_chicken : public eosio::contract {
             account_name          winner = N(none);
             std::vector<board_cell> board;
             std::vector<player> players;
+            uint32_t              kickoff_time = 0;
 
             // Reset game
             void reset() {
