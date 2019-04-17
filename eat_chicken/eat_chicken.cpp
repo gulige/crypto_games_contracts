@@ -132,6 +132,8 @@ void eat_chicken::setmap(const account_name& who, const uint64_t& game_id, const
             }
         }
         g.game_progress = 1;
+        board_cell& center_cell = g.board[game::board_center_cell_id];
+        log_event(g, center_cell, N(none), -1, 0, "setmap", 0);
     });
 }
 
