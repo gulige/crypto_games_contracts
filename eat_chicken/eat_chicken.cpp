@@ -152,6 +152,7 @@ void eat_chicken::kickoff(const account_name& who, const uint64_t& game_id) {
     existing_games.modify(itr, who, [&](auto& g) {
         g.game_progress = 2;
         g.step = 0;
+        g.kickoff_time = now();
     });
 }
 
