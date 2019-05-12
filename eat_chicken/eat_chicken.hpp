@@ -78,6 +78,10 @@ class eat_chicken : public eosio::contract {
         /// End
         void end(const account_name& who, const uint64_t& game_id);
 
+        /// @abi action
+        /// Version
+        void version();
+
     private:
         struct player {
             static const int8_t max_hp = 6;

@@ -769,6 +769,13 @@ void eat_chicken::end(const account_name& who, const uint64_t& game_id) {
     }
 }
 
+/**
+ * @brief Apply version action
+ */
+void eat_chicken::version() {
+    print("West World version 1.0.0");
+}
+
 void eat_chicken::deposit(const account_name& from, const eosio::asset& quantity) {
     eosio_assert(quantity.is_valid(), "invalid quantity");
     eosio_assert(quantity.amount > 0, "must deposit positive quantity");
