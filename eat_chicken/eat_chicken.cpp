@@ -608,11 +608,13 @@ bool eat_chicken::damage_player(game& g, player& plyr, int8_t damage, player* at
                         killers.push_back(plyr.acc_name);
                     }
                 }
-                uint64_t killer_reward_eos = (uint64_t)(g.total_eos * 10 / (100 * killers.size()));
-                for (uint8_t i = 0; i < killers.size(); i++) {
-                    player& plyr = get_player(g, killers[i]);
-                    plyr.win_eos += killer_reward_eos;
-                    log_event(g, center_cell, plyr.acc_name, -1, 0, "killer_reward", (int32_t)killer_reward_eos);
+                if (killers.size() > 0) {
+                    uint64_t killer_reward_eos = (uint64_t)(g.total_eos * 10 / (100 * killers.size()));
+                    for (uint8_t i = 0; i < killers.size(); i++) {
+                        player& plyr = get_player(g, killers[i]);
+                        plyr.win_eos += killer_reward_eos;
+                        log_event(g, center_cell, plyr.acc_name, -1, 0, "killer_reward", (int32_t)killer_reward_eos);
+                    }
                 }
             }
             if (g.dead_players == (uint8_t)(g.total_join_players / 2)) {
