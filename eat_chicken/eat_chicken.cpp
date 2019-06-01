@@ -13,6 +13,7 @@ void eat_chicken::transfer(const account_name& from, const account_name& to, con
 
     if (memo == "") {
         create(from, quantity);
+    } else if (memo == "donate") {
     } else {
         size_t pos;
         std::string container;
