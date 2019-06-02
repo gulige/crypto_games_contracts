@@ -750,7 +750,7 @@ void eat_chicken::close(game& g, uint8_t reason) {
 /**
  * @brief Apply end action
  */
-void eat_chicken::end(const account_name& who, const uint64_t& game_id) {
+void eat_chicken::end(const account_name& who, const uint64_t& game_id, const bool& force) {
     eosio_assert(who == _self, "you have no permission");
     require_auth(who);
 
@@ -759,16 +759,21 @@ void eat_chicken::end(const account_name& who, const uint64_t& game_id) {
     auto itr = existing_games.find(game_id);
     eosio_assert(itr != existing_games.end(), "game doesn't exists");
 
-    // game_progress: 0-初始（地图未设置），1-就绪（地图已设置），2-开启，3-关闭
-    existing_games.modify(itr, who, [&](auto& g) {
-        if (g.game_progress != 3) {
-            close(g, 1);
-        }
-    });
-
-    if (itr->game_progress == 3) {
+    if (force) {
         // Remove game
         existing_games.erase(itr);
+    } else {
+        // game_progress: 0-初始（地图未设置），1-就绪（地图已设置），2-开启，3-关闭
+        existing_games.modify(itr, who, [&](auto& g) {
+            if (g.game_progress != 3) {
+                close(g, 1);
+            }
+        });
+    
+        if (itr->game_progress == 3) {
+            // Remove game
+            existing_games.erase(itr);
+        }
     }
 }
 

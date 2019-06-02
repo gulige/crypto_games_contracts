@@ -76,7 +76,7 @@ class eat_chicken : public eosio::contract {
 
         /// @abi action
         /// End
-        void end(const account_name& who, const uint64_t& game_id);
+        void end(const account_name& who, const uint64_t& game_id, const bool& force);
 
         /// @abi action
         /// Version
@@ -140,7 +140,7 @@ class eat_chicken : public eosio::contract {
             static const uint8_t board_center_cell_id = 60;
             static const uint8_t max_safe_area_radius = 5;
             static const uint8_t ticks_for_safe_area = 6;
-            static const uint8_t max_steps_before_kick_off = 60;
+            static const uint8_t max_steps_before_kick_off = 60 * 2 * 24;
             static const uint8_t duel_card = 9;
             static const uint8_t relive_card = 10;
             static const uint8_t max_joiners = 100;
