@@ -57,7 +57,7 @@
  (data (i32.const 144) "no column\00")
  (data (i32.const 160) "invalid join_eos\00")
  (data (i32.const 192) "only EOS token allowed\00")
- (data (i32.const 224) "join_eos is too low\00")
+ (data (i32.const 224) "join_eos is negative\00")
  (data (i32.const 256) "out of bound\00")
  (data (i32.const 272) "object passed to iterator_to is not in multi_index\00")
  (data (i32.const 336) "game doesn\'t exists\00")
@@ -97,7 +97,7 @@
  (data (i32.const 1648) "attempt to remove object that was not in multi_index\00")
  (data (i32.const 1712) "move\00")
  (data (i32.const 1728) "player not found\00")
- (data (i32.const 1760) "total_eos must be > total_win_eos\00")
+ (data (i32.const 1760) "total_eos must be >= total_win_eos\00")
  (data (i32.const 1808) "game_over\00")
  (data (i32.const 1824) "invalid quantity\00")
  (data (i32.const 1856) "must withdraw positive quantity\00")
@@ -984,11 +984,16 @@
    (i32.const 192)
   )
   (call $eosio_assert
-   (i64.gt_s
-    (i64.load
-     (get_local $2)
+   (i32.xor
+    (i32.wrap/i64
+     (i64.shr_u
+      (i64.load
+       (get_local $2)
+      )
+      (i64.const 63)
+     )
     )
-    (i64.const 9999)
+    (i32.const 1)
    )
    (i32.const 224)
   )
@@ -1587,12 +1592,20 @@
    )
    (i32.const 192)
   )
+  (set_local $9
+   (i32.const 1)
+  )
   (call $eosio_assert
-   (i64.gt_s
-    (i64.load
-     (get_local $2)
+   (i32.xor
+    (i32.wrap/i64
+     (i64.shr_u
+      (i64.load
+       (get_local $2)
+      )
+      (i64.const 63)
+     )
     )
-    (i64.const 9999)
+    (i32.const 1)
    )
    (i32.const 224)
   )
@@ -1648,7 +1661,7 @@
   (block $label$5
    (br_if $label$5
     (i32.lt_s
-     (tee_local $9
+     (tee_local $11
       (call $db_find_i64
        (get_local $8)
        (get_local $8)
@@ -1670,7 +1683,7 @@
          (get_local $12)
          (i32.const 24)
         )
-        (get_local $9)
+        (get_local $11)
        )
       )
      )
@@ -1690,9 +1703,6 @@
     )
    )
    (i32.const 336)
-  )
-  (set_local $9
-   (i32.const 1)
   )
   (block $label$6
    (br_if $label$6
@@ -22400,7 +22410,7 @@
      )
     )
     (call $eosio_assert
-     (i64.gt_u
+     (i64.ge_u
       (i64.load offset=48
        (get_local $1)
       )
