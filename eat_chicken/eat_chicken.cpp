@@ -35,7 +35,8 @@ void eat_chicken::create(const account_name& who, const eosio::asset& join_eos) 
 
     eosio_assert(join_eos.is_valid(), "invalid join_eos");
     eosio_assert(join_eos.symbol == EOS_SYMBOL, "only EOS token allowed");
-    eosio_assert(join_eos.amount >= 10000, "join_eos is too low");
+    //eosio_assert(join_eos.amount >= 10000, "join_eos is too low");
+    eosio_assert(join_eos.amount >= 0, "join_eos is negative");
 
     games existing_games(_self, _self);
     uint64_t game_id = existing_games.available_primary_key();
@@ -53,7 +54,8 @@ void eat_chicken::join(const account_name& who, const eosio::asset& join_eos, co
 
     eosio_assert(join_eos.is_valid(), "invalid join_eos");
     eosio_assert(join_eos.symbol == EOS_SYMBOL, "only EOS token allowed");
-    eosio_assert(join_eos.amount >= 10000, "join_eos is too low");
+    //eosio_assert(join_eos.amount >= 10000, "join_eos is too low");
+    eosio_assert(join_eos.amount >= 0, "join_eos is negative");
     eosio_assert(row < game::board_height, "out of bound");
     eosio_assert(column < game::board_width, "out of bound");
 
@@ -721,7 +723,7 @@ void eat_chicken::close(game& g, uint8_t reason) {
                 total_win_eos += g.players[j].win_eos;
             }
         }
-        eosio_assert(g.total_eos > total_win_eos, "total_eos must be > total_win_eos");
+        eosio_assert(g.total_eos >= total_win_eos, "total_eos must be >= total_win_eos");
         // distribute eos according to game state
         for (uint8_t i = 0; i < g.players.size(); i++) {
             if (g.players[i].win_eos > 0) {
