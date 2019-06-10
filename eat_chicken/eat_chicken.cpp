@@ -605,7 +605,7 @@ bool eat_chicken::damage_player(game& g, player& plyr, int8_t damage, player* at
                         kill_count = plyr.kill_count;
                         killers.clear();
                         killers.push_back(plyr.acc_name);
-                    } else if (plyr.kill_count == kill_count) {
+                    } else if (plyr.kill_count > 0 && plyr.kill_count == kill_count) {
                         killers.push_back(plyr.acc_name);
                     }
                 }
@@ -778,10 +778,27 @@ void eat_chicken::end(const account_name& who, const uint64_t& game_id, const bo
 }
 
 /**
+ * @brief Apply leaveword action
+ */
+void eat_chicken::leaveword(const account_name& who, const uint64_t& game_id, const std::string& leaveword) {
+    require_auth(who);
+
+    // Check if game exists
+    games existing_games(_self, _self);
+    auto itr = existing_games.find(game_id);
+    eosio_assert(itr != existing_games.end(), "game doesn't exists");
+
+    existing_games.modify(itr, who, [&](auto& g) {
+        board_cell& center_cell = g.board[game::board_center_cell_id];
+        log_event(g, center_cell, who, 99, 0, leaveword, 0);
+    });
+}
+
+/**
  * @brief Apply version action
  */
 void eat_chicken::version() {
-    print("West World version 1.0.0");
+    print("West World version 1.0.1");
 }
 
 void eat_chicken::deposit(const account_name& from, const eosio::asset& quantity) {
@@ -838,7 +855,7 @@ extern "C" {
 
         if (code == self || action == N(onerror)) {
             switch(action) {
-                EOSIO_API(eat_chicken, (setmap)(kickoff)(move)(tick)(end))
+                EOSIO_API(eat_chicken, (setmap)(kickoff)(move)(tick)(end)(leaveword))
             }
             /* does not allow destructor of thiscontract to run: eosio_exit(0); */
         }

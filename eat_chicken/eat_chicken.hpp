@@ -79,6 +79,10 @@ class eat_chicken : public eosio::contract {
         void end(const account_name& who, const uint64_t& game_id, const bool& force);
 
         /// @abi action
+        /// Leave Word
+        void leaveword(const account_name& who, const uint64_t& game_id, const std::string& leaveword);
+
+        /// @abi action
         /// Version
         void version();
 
