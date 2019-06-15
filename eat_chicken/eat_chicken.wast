@@ -28226,7 +28226,7 @@
        (br_if $label$6
         (i32.lt_s
          (get_local $6)
-         (i32.const 2880)
+         (i32.const 48)
         )
        )
        (block $label$16
